@@ -1,6 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-yarn prettier:fix
-yarn lint
-git add .
+npm run lint:fix
+npm run prettier:fix
