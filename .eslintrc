@@ -1,0 +1,51 @@
+{
+  "env": {
+    "es6": true,
+    "commonjs": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended"],
+  "parser": "@babel/eslint-parser",
+  "parserOptions": {
+    "requireConfigFile": false,
+    "babelOptions": {
+      "babelrc": false,
+      "configFile": false
+    }
+  },
+  "plugins": ["simple-import-sort"],
+  "rules": {
+    "no-shadow": "off",
+    "prefer-const": [
+      "error",
+      {
+        "ignoreReadBeforeAssign": false
+      }
+    ],
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "no-useless-catch": "off",
+    "padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "prev": "*",
+        "next": "return"
+      },
+      {
+        "blankLine": "always",
+        "prev": ["const", "let", "var", "block", "block-like"],
+        "next": "*"
+      },
+      {
+        "blankLine": "any",
+        "prev": ["const", "let", "var"],
+        "next": ["const", "let", "var"]
+      }
+    ],
+    "no-unused-vars": "off"
+  },
+  "globals": {
+    "process": true
+  }
+}

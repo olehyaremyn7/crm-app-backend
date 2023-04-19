@@ -1,0 +1,5 @@
+const DEFAULT_JWT_EXPIRES_IN_DAY_FORMAT = '1d';
+
+module.exports = { 
+  DEFAULT_JWT_EXPIRES_IN_DAY_FORMAT, 
+};
