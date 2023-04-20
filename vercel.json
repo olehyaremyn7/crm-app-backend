@@ -5,9 +5,13 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "uploads/**",
+      "use": "@vercel/static"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
       "source": "/(.*)",
       "destination": "server.js"
