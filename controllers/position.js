@@ -1,8 +1,15 @@
 const error = require('../utils/errorHandler');
 const Position = require('../models/Position');
 const Category = require('../models/Category');
+const { isPositionUpdated } = require('../utils/position');
+const { positionsMessages }  = require('../constants/messages');
+const { responseStatuses } = require('../constants/index');
+
+const { SUCCESS, WARNING } = responseStatuses;
 
 module.exports.getByCategoryId = async (req, res) => {
+  const { positionsFound, noPositions, loadPositionsServerError } = positionsMessages;
+
   try {
     const { categoryId: category } = req.params;
     const { id: user } = req.user;
@@ -12,30 +19,32 @@ module.exports.getByCategoryId = async (req, res) => {
     });
 
     res.status(200).json({
-      response: 'success',
-      message: positions.length ? 'Positions found' : 'No positions',
+      response: SUCCESS,
+      message: positions.length ? positionsFound : noPositions,
       positions,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to load positions in this category. Try again';
+    e.message = loadPositionsServerError;
     error(res, e);
   }
 };
 
 module.exports.create = async (req, res) => {
+  const { positionNameExist, positionCreated, createPositionServerError } = positionsMessages;
+
   try {
     const { id: user } = req.user;
     const { category: _id, name } = req.body;
-    const candidate = await Position.findOne({
+    const isPositionNameExist = await Position.findOne({
       category: _id,
       name,
       user,
-    });
+    }).lean();
 
-    if (candidate) {
+    if (isPositionNameExist) {
       return res.status(409).json({
-        response: 'warning',
-        message: 'This position is already exist. Enter another position name',
+        response: WARNING,
+        message: positionNameExist,
       });
     }
 
@@ -46,77 +55,94 @@ module.exports.create = async (req, res) => {
 
     await position.save();
 
-    const category = await Category.findById(_id);
-    const updated = {
-      ...category,
-      positions: category.positions++,
-    };
+    const category = await Category.findOne({ _id });
+    const positions = category.positions++;
 
-    await Category.findOneAndUpdate({ _id }, { $set: updated }, { new: true });
+    await Category.findOneAndUpdate({ _id }, { $set: {
+      ...category,
+      positions,
+    } }, { new: true });
 
     res.status(201).json({
-      response: 'success',
-      message: 'New position was successfully created',
+      response: SUCCESS,
+      message: positionCreated,
       position,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to create a position. Try again';
+    e.message = createPositionServerError;
     error(res, e);
   }
 };
 
 module.exports.update = async (req, res) => {
-  try {
-    const { id: user } = req.user;
-    const { name, category } = req.body;
-    const candidate = await Position.findOne({
-      category,
-      name,
-      user,
-    });
+  const { positionNameExist, positionNotUpdated, positionUpdated, updatePositionServerError } = positionsMessages;
 
-    if (candidate) {
+  try {
+    const { id: _id } = req.params;
+    const updatedPosition = req.body;
+    const existingPosition = await Position.findOne({ _id }).select('name cost category _id').lean();
+
+    if (isPositionUpdated(existingPosition, updatedPosition)) {
       return res.status(409).json({
-        response: 'warning',
-        message: 'This position is already exist. Enter another position name',
+        response: WARNING,
+        message: positionNotUpdated,
       });
     }
 
-    const { id: _id } = req.params;
-    const position = await Position.findOneAndUpdate({ _id }, { $set: req.body }, { new: true });
+    const { id: user } = req.user;
+    const { name, category } = updatedPosition;
+    const isPositionNameExist = await Position.findOne({
+      category,
+      name,
+      user,
+      _id: { $ne: _id }
+    }).lean();
+
+    if (isPositionNameExist) {
+      return res.status(409).json({
+        response: WARNING,
+        message: positionNameExist,
+      });
+    }
+
+    const position = await Position.findOneAndUpdate({ _id }, { $set: updatedPosition }, { new: true });
 
     res.status(200).json({
-      response: 'success',
-      message: 'Position was successfully updated',
+      response: SUCCESS,
+      message: positionUpdated,
       position,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to update the position data. Try again';
+    e.message = updatePositionServerError;
     error(res, e);
   }
 };
 
 module.exports.remove = async (req, res) => {
-  try {
-    const { id: _id } = req.params;
-    const { category: categoryId } = await Position.findOne({
-      _id,
-    });
-    const category = await Category.findById(categoryId);
-    const updated = {
-      ...category,
-      positions: category.positions--,
-    };
+  const { positionDeleted, deletePositionServerError } = positionsMessages;
 
-    await Category.findOneAndUpdate({ _id: categoryId }, { $set: updated }, { new: true });
-    await Position.remove({ _id });
+  try {
+    const { id: positionId } = req.params;
+    const { category: _id } = await Position.findOne({
+      _id: positionId,
+    }).lean();
+
+    await Position.deleteOne({ _id: positionId });
+
+    const category = await Category.findOne({ _id });
+    const positions = category.positions--;
+
+    await Category.findOneAndUpdate({ _id }, { $set: {
+      ...category,
+      positions,
+    } }, { new: true });
 
     res.status(200).json({
-      response: 'success',
-      message: 'Position has been deleted',
+      response: SUCCESS,
+      message: positionDeleted,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to delete a position. Try again';
+    e.message = deletePositionServerError;
     error(res, e);
   }
 };

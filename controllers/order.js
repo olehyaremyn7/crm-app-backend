@@ -1,5 +1,9 @@
 const error = require('../utils/errorHandler');
 const Order = require('../models/Order');
+const { ordersMessages }  = require('../constants/messages');
+const { responseStatuses } = require('../constants/index');
+
+const { SUCCESS } = responseStatuses;
 
 module.exports.getAll = async (req, res) => {
   const { id: user } = req.user;
@@ -24,6 +28,8 @@ module.exports.getAll = async (req, res) => {
     query.order = +order;
   }
 
+  const { ordersFound, noOrders, loadOrdersServerError } = ordersMessages;
+
   try {
     const orders = await Order.find(query)
       .sort({ date: -1 })
@@ -31,17 +37,19 @@ module.exports.getAll = async (req, res) => {
       .limit(+limit);
 
     res.status(200).json({
-      response: 'success',
-      message: orders.length ? 'Orders found' : 'No orders',
+      response: SUCCESS,
+      message: orders.length ? ordersFound : noOrders,
       orders,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to load orders. Try again';
+    e.message = loadOrdersServerError;
     error(res, e);
   }
 };
 
 module.exports.create = async (req, res) => {
+  const { orderCreated, createOrderServerError } = ordersMessages;
+
   try {
     const { id: user } = req.user;
     const { list } = req.body;
@@ -59,12 +67,12 @@ module.exports.create = async (req, res) => {
     await order.save();
 
     res.status(201).json({
-      response: 'success',
-      message: 'New order was successfully created',
+      response: SUCCESS,
+      message: orderCreated,
       order,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to create a new order. Try again';
+    e.message = createOrderServerError;
     error(res, e);
   }
 };

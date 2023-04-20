@@ -1,49 +1,61 @@
 const error = require('../utils/errorHandler');
 const Category = require('../models/Category');
 const Position = require('../models/Position');
+const { isCategoryUpdated } = require('../utils/category');
+const { categoryMessages }  = require('../constants/messages');
+const { responseStatuses } = require('../constants/index');
+
+const { SUCCESS, WARNING } = responseStatuses;
 
 module.exports.getAll = async (req, res) => {
+  const { categoriesFound, noCategories, loadCategoriesServerError } = categoryMessages;
+
   try {
     const { id: user } = req.user;
     const categories = await Category.find({ user });
 
     res.status(200).json({
-      response: 'success',
-      message: categories.length ? 'Categories found' : 'No categories',
+      response: SUCCESS,
+      message: categories.length ? categoriesFound : noCategories,
       categories,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to load categories. Try again';
+    e.message = loadCategoriesServerError;
     error(res, e);
   }
 };
 
 module.exports.getById = async (req, res) => {
+  const { categoryFound, noCategory, getCategoryServerError } = categoryMessages;
+
   try {
-    const { id } = req.params;
-    const category = await Category.findById(id);
+    const { id: _id } = req.params;
+    const { id: user } = req.user;
+    const category = await Category.findOne({ _id, user });
 
     res.status(200).json({
-      response: 'success',
+      response: SUCCESS,
       category,
-      message: category ? 'Category found' : 'No category',
+      message: category ? categoryFound : noCategory,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to get category. Try again';
+    e.message = getCategoryServerError;
     error(res, e);
   }
 };
 
 module.exports.create = async (req, res) => {
-  try {
-    const { name } = req.body;
-    const { id: user } = req.user;
-    const candidate = await Category.findOne({ name, user });
+  const { caterogyNameExist, categoryCreated, createCategoryServerError } = categoryMessages;
 
-    if (candidate) {
+  try {
+    const { id: user } = req.user;
+    const { name } = req.body;
+    const isCategoryNameExist = await Category.findOne({ name, user }).lean();
+
+    if (isCategoryNameExist) {
       return res.status(409).json({
-        response: 'warning',
-        message: 'This category is already exist. Enter another category name',
+        response: WARNING,
+        message: caterogyNameExist,
       });
     }
 
@@ -57,64 +69,85 @@ module.exports.create = async (req, res) => {
     await category.save();
 
     res.status(201).json({
-      response: 'success',
-      message: 'New category was successfully created',
+      response: SUCCESS,
+      message: categoryCreated,
       category,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to create a category. Try again';
+    e.message = createCategoryServerError;
     error(res, e);
   }
 };
 
 module.exports.update = async (req, res) => {
+  const { caterogyNameExist, categoryNotUpdated, categoryUpdated, updateCategoryServerError } = categoryMessages;
+
   try {
-    const { name } = req.body;
-    const { id: user } = req.user;
-    const candidate = await Category.findOne({ name, user });
-
-    if (candidate) {
-      return res.status(409).json({
-        response: 'warning',
-        message: 'This category is already exist. Enter another category name',
-      });
-    }
-
     const { id: _id } = req.params;
-    const updated = req.body;
+    const { id: user } = req.user;
+    const updatedCategory = {
+      ...req.body,
+      user,
+      _id,
+    };
 
     if (req.file) {
       const { path } = req.file;
 
-      updated.imagePath = path;
+      updatedCategory.imagePath = path;
     }
 
-    const category = await Category.findOneAndUpdate({ _id }, { $set: updated }, { new: true });
+    const existingCategory = await Category.findOne({ _id, user }).select(`name ${req.file ? 'imagePath' : ''} _id user`).lean();
+
+    if (isCategoryUpdated(existingCategory, updatedCategory)) {
+      return res.status(409).json({
+        response: WARNING,
+        message: categoryNotUpdated,
+      });
+    }
+
+    const { name } = updatedCategory;
+    const isCategoryNameExist = await Category.findOne({
+      name,
+      user,
+      _id: { $ne: _id }
+    }).lean();
+
+    if (isCategoryNameExist) {
+      return res.status(409).json({
+        response: WARNING,
+        message: caterogyNameExist,
+      });
+    }
+
+    const category = await Category.findOneAndUpdate({ _id }, { $set: updatedCategory }, { new: true });
 
     res.status(200).json({
-      response: 'success',
-      message: 'Category was successfully updated',
+      response: SUCCESS,
+      message: categoryUpdated,
       category,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to update the category data. Try again';
+    e.message = updateCategoryServerError;
     error(res, e);
   }
 };
 
 module.exports.remove = async (req, res) => {
+  const { categoryDeleted, deleteCategoryServerError } = categoryMessages;
+
   try {
     const { id: _id } = req.params;
 
     await Category.deleteOne({ _id });
-    await Position.deleteOne({ category: _id });
+    await Position.deleteMany({ category: _id });
 
     res.status(200).json({
-      response: 'success',
-      message: 'Category has been deleted',
+      response: SUCCESS,
+      message: categoryDeleted,
     });
   } catch (e) {
-    e.message = 'An error occurred while trying to delete a category. Try again';
+    e.message = deleteCategoryServerError;
     error(res, e);
   }
 };

@@ -5,12 +5,20 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    }
+    },
+    {
+      "src": "uploads/**",
+      "use": "@vercel/static"
+  }
   ],
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "server.js"
-    }
+    },
+    {
+      "src": "/(.+)",
+      "dest": "uploads/$1"
+  }
   ]
 }
