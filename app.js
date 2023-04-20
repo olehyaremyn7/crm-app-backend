@@ -14,6 +14,7 @@ const OrderRouter = require('./routes/order');
 const CategoryRouter = require('./routes/category');
 const PositionRouter = require('./routes/position');
 const errorHandler = require('./middleware/errors');
+const corsConfig = require('./config/cors');
 const { limiter } = require('./utils/limiter');
 
 const app = express();
@@ -25,8 +26,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cors());
-app.use(helmet());
+app.use(cors(corsConfig));
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(compression());
 app.use(xss());
 app.use(mongoSanitize());

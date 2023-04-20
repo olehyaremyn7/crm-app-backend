@@ -1,17 +1,17 @@
 const rateLimit = require('express-rate-limit');
 const MongoStore = require('rate-limit-mongo');
-const { mongoURI } = require('../environments/environment');
+const { mongoEndpoint } = require('../environments/environment');
 const { mongoDBMessages } = require('../constants/messages');
 
-const { mongoURIError, requestLimit: message } = mongoDBMessages;
+const { mongoEndpointError, requestLimit: message } = mongoDBMessages;
 
-if (!mongoURI) {
-  throw new Error(mongoURIError);
+if (!mongoEndpoint) {
+  throw new Error(mongoEndpointError);
 }
 
 module.exports.limiter = rateLimit({
   store: new MongoStore({
-    uri: mongoURI,
+    uri: mongoEndpoint,
   }),
   windowMs: 15 * 60 * 1000,
   max: 100,

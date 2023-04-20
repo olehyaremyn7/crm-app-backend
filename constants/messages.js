@@ -1,7 +1,7 @@
 const { mode, port } = require('../environments/environment');
 
 const mongoDBMessages = {
-  mongoURIError: '[ERROR] MongoDB connection URI not available! Unable to connect to MongoDB database and start server. Pass the correct URI to process...',
+  mongoEndpointError: '[ERROR] MongoDB connection URI not available! Unable to connect to MongoDB database and start server. Pass the correct URI to process...',
   requestLimit: '[WARNING] Too many requests addressed to MongoDB',
   connected: '[SUCCESS] MongoDB database has been successfully connected. Expecting server to start...',
 };

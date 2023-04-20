@@ -5,8 +5,8 @@ const { subtractDay } = require('../utils/moment');
 
 module.exports.overview = async (req, res) => {
   try {
-    const { id } = req.user;
-    const orders = await Order.find({ user: id }).sort({ date: 1 });
+    const { id: user } = req.user;
+    const orders = await Order.find({ user }).sort({ date: 1 });
     const yesterdayDate = subtractDay(1);
 
     res.status(200).json({
@@ -25,8 +25,8 @@ module.exports.overview = async (req, res) => {
 
 module.exports.analytics = async (req, res) => {
   try {
-    const { id } = req.user;
-    const orders = await Order.find({ user: id }).sort({ date: 1 });
+    const { id: user } = req.user;
+    const orders = await Order.find({ user }).sort({ date: 1 });
     const { average, charts } = createAnalytics(orders);
 
     res.status(200).json({

@@ -1,17 +1,17 @@
-const { mongoURI } = require('../environments/environment');
+const { mongoEndpoint } = require('../environments/environment');
 const { mongoDBMessages } = require('../constants/messages');
 
 const mongoose = require('mongoose');
 
-const { mongoURIError, connected } = mongoDBMessages;
+const { mongoEndpointError, connected } = mongoDBMessages;
 
 module.exports.connectMongoDB = async () => {
-  if (!mongoURI) {
-    throw new Error(mongoURIError);
+  if (!mongoEndpoint) {
+    throw new Error(mongoEndpointError);
   }
 
   try {
-    await mongoose.connect(mongoURI, {
+    await mongoose.connect(mongoEndpoint, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       useCreateIndex: true,

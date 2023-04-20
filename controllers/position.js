@@ -4,11 +4,11 @@ const Category = require('../models/Category');
 
 module.exports.getByCategoryId = async (req, res) => {
   try {
-    const { categoryId } = req.params;
-    const { id } = req.user;
+    const { categoryId: category } = req.params;
+    const { id: user } = req.user;
     const positions = await Position.find({
-      category: categoryId,
-      user: id,
+      category,
+      user,
     });
 
     res.status(200).json({
@@ -24,12 +24,12 @@ module.exports.getByCategoryId = async (req, res) => {
 
 module.exports.create = async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id: user } = req.user;
     const { category: _id, name } = req.body;
     const candidate = await Position.findOne({
       category: _id,
       name,
-      user: id,
+      user,
     });
 
     if (candidate) {
@@ -41,7 +41,7 @@ module.exports.create = async (req, res) => {
 
     const position = new Position({
       ...req.body,
-      user: id,
+      user,
     });
 
     await position.save();
@@ -67,6 +67,21 @@ module.exports.create = async (req, res) => {
 
 module.exports.update = async (req, res) => {
   try {
+    const { id: user } = req.user;
+    const { name, category } = req.body;
+    const candidate = await Position.findOne({
+      category,
+      name,
+      user,
+    });
+
+    if (candidate) {
+      return res.status(409).json({
+        response: 'warning',
+        message: 'This position is already exist. Enter another position name',
+      });
+    }
+
     const { id: _id } = req.params;
     const position = await Position.findOneAndUpdate({ _id }, { $set: req.body }, { new: true });
 

@@ -4,8 +4,8 @@ const Position = require('../models/Position');
 
 module.exports.getAll = async (req, res) => {
   try {
-    const { id } = req.user;
-    const categories = await Category.find({ user: id });
+    const { id: user } = req.user;
+    const categories = await Category.find({ user });
 
     res.status(200).json({
       response: 'success',
@@ -37,10 +37,8 @@ module.exports.getById = async (req, res) => {
 module.exports.create = async (req, res) => {
   try {
     const { name } = req.body;
-    const { id } = req.user;
-    const imagePath = req.file ? req.file.path : '';
-
-    const candidate = await Category.findOne({ name });
+    const { id: user } = req.user;
+    const candidate = await Category.findOne({ name, user });
 
     if (candidate) {
       return res.status(409).json({
@@ -49,9 +47,10 @@ module.exports.create = async (req, res) => {
       });
     }
 
+    const imagePath = req.file ? req.file.path : '';
     const category = new Category({
       name,
-      user: id,
+      user,
       imagePath,
     });
 
@@ -70,8 +69,19 @@ module.exports.create = async (req, res) => {
 
 module.exports.update = async (req, res) => {
   try {
-    const updated = req.body;
+    const { name } = req.body;
+    const { id: user } = req.user;
+    const candidate = await Category.findOne({ name, user });
+
+    if (candidate) {
+      return res.status(409).json({
+        response: 'warning',
+        message: 'This category is already exist. Enter another category name',
+      });
+    }
+
     const { id: _id } = req.params;
+    const updated = req.body;
 
     if (req.file) {
       const { path } = req.file;

@@ -1,15 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const envVariables = require('../environments/environment');
+const environment = require('../environments/environment');
 const error = require('../utils/errorHandler');
 const { convernJwtExpiredInIntoMs } = require('../utils/authorization');
 const { DEFAULT_JWT_EXPIRES_IN_DAY_FORMAT }  = require('../constants/jwt');
 
 module.exports.login = async (req, res) => {
   try {
-    const { jwtExpiresIn: expiresInEnv, jwt: jwtSecret } = envVariables;
-    const jwtExpiresIn = expiresInEnv || DEFAULT_JWT_EXPIRES_IN_DAY_FORMAT;
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
@@ -29,7 +27,9 @@ module.exports.login = async (req, res) => {
         message: 'Wrong password. Try again',
       });
     }
-
+    
+    const { jwtExpiresIn: expiresInEnv, jwt: jwtSecret } = environment;
+    const jwtExpiresIn = expiresInEnv || DEFAULT_JWT_EXPIRES_IN_DAY_FORMAT;
     const token = jwt.sign({ userId, email: userEmail }, jwtSecret, { expiresIn: jwtExpiresIn });
 
     res.status(200).json({
