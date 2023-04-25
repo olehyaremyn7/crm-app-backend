@@ -14,8 +14,6 @@ module.exports.connectMongoDB = async () => {
     await mongoose.connect(mongoEndpoint, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      useCreateIndex: true,
-      useFindAndModify: false,
     });
 
     console.log(connected);
